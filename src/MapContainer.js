@@ -7,16 +7,44 @@ function MapContainer(props) {
   const { google } = props;
 
   const [data, setData] = useState({});
+  const [polygons, setPolygons] = useState({});
+
+  function processData(spreadsheetData) {
+    const dirtData = {};
+    const polygonData = {};
+
+    // loop through each tab and process according if it's a data or map-area tab
+    for (const tabName in spreadsheetData) {
+      const location = spreadsheetData[tabName].elements[0].location;
+
+      if (tabName.includes("data-")) {
+        dirtData[location] = spreadsheetData[tabName].elements;
+      } else if (tabName.includes("map-area-")) {
+        const locationPolygon = polygonData[location];
+        if (!locationPolygon) {
+          polygonData[location] = [];
+        }
+
+        spreadsheetData[tabName].elements.forEach((row) => {
+          polygonData[row.location].push({
+            lat: row.lat,
+            lng: row.lng,
+          });
+        });
+      }
+    }
+
+    setPolygons(polygonData);
+    setData(dirtData);
+  }
+
   useEffect(() => {
     Tabletop.init({
       key: "https://docs.google.com/spreadsheets/d/19Za-wgC1G_-TcFNm3j7iMpbmbF9P-PoaA_qKKhyRQCs/pubhtml",
-      callback: (googleData) => {
-        setData(googleData);
-      },
+      parseNumbers: true,
+      callback: processData,
     });
-  });
-
-  console.log(data);
+  }, []);
 
   const [showInfoWindow, setShowInfoWindow] = useState(true);
 
@@ -32,15 +60,10 @@ function MapContainer(props) {
   return (
     <Map google={google} zoom={14}>
       <Marker onClick={onMarkerClick} name={"Current location"} />
-      <Polygon
-        paths={[
-          { lat: 37.78178778, lng: -122.4223591 },
-          { lat: 37.78282227, lng: -122.4141193 },
-          { lat: 37.7797357, lng: -122.413497 },
-          { lat: 37.77418972, lng: -122.4206854 },
-        ]}
-        onClick={onMarkerClick}
-      />
+      {Object.keys(polygons).map((key) => {
+        console.log("mapping", key, polygons[key]);
+        return <Polygon paths={polygons[key]} onClick={onMarkerClick} />;
+      })}
       <InfoWindow visible={showInfoWindow} onOpen={() => console.log("opened")} onClose={onInfoWindowClose}>
         <div style={{ backgroundColor: "red", minWidth: "200", minHeight: "200" }}>
           <h1>hi</h1>
