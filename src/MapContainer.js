@@ -47,6 +47,8 @@ function MapContainer(props) {
   }, []);
 
   const [showInfoWindow, setShowInfoWindow] = useState(true);
+  const [activePolygon, setActivePolygon] = useState(null);
+  const [infoWindowPosition, setInfoWindowPosition] = useState(null);
 
   function onMarkerClick() {
     setShowInfoWindow(!showInfoWindow);
@@ -57,14 +59,34 @@ function MapContainer(props) {
     setShowInfoWindow(false);
   }
 
+  function onMapClicked() {
+    if (showInfoWindow) {
+      onInfoWindowClose();
+    }
+    setShowInfoWindow(false);
+    setInfoWindowPosition(null);
+    setActivePolygon(null);
+  }
+
+  function onPolygonClick(polygon) {
+    setActivePolygon(polygon);
+    setInfoWindowPosition(getPolygonPosition(polygon.paths));
+    setShowInfoWindow(true);
+  }
+
+  function getPolygonPosition(paths) {
+    // TODO: calculate the "center" of the polygon instead of returning a corner of it
+    return paths[0];
+  }
+
   return (
-    <Map google={google} zoom={14}>
+    <Map google={google} zoom={14} onClick={onMapClicked}>
       <Marker onClick={onMarkerClick} name={"Current location"} />
       {Object.keys(polygons).map((key) => {
         console.log("mapping", key, polygons[key]);
-        return <Polygon paths={polygons[key]} onClick={onMarkerClick} />;
+        return <Polygon key={key} paths={polygons[key]} onClick={onPolygonClick} />;
       })}
-      <InfoWindow visible={showInfoWindow} onOpen={() => console.log("opened")} onClose={onInfoWindowClose}>
+      <InfoWindow position={infoWindowPosition} visible={showInfoWindow} onOpen={() => console.log("opened")} onClose={onInfoWindowClose}>
         <div style={{ backgroundColor: "red", minWidth: "200", minHeight: "200" }}>
           <h1>hi</h1>
         </div>
