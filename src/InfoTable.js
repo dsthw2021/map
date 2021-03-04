@@ -14,7 +14,7 @@ export default function InfoTable(props) {
           .filter((k) => k.toLowerCase() !== "location")
           .map((key) => {
             return (
-              <tr>
+              <tr key={key}>
                 <td className="bold">{titleCase(key)}</td>
                 <td>{info[key]}</td>
               </tr>

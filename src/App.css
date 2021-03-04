@@ -1,5 +1,5 @@
 .App {
-  text-align: center;
+  text-align: left;
 }
 
 .App-logo {
@@ -47,11 +47,24 @@ td {
 
 td.bold {
   padding-right: 10px;
+  padding-bottom: 5px;
 }
 
 .info-window {
+  padding: 10px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
+}
+
+.data-table,
+.data-table td {
+  text-align: center;
+}
+
+th {
+  padding: 5px;
+  border-bottom: 1px solid black;
+  /* border-right: 1px solid black; */
 }

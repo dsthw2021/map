@@ -8,15 +8,13 @@ export default function DataTable(props) {
       <h2>{title}</h2>
       <table className="data-table">
         <tr>
-          {Object.keys(rows[0]).map((col) => (
-            <th>{col}</th>
-          ))}
+          {Object.keys(rows[0]).map((col) => (col.toLowerCase() !== "location" ? <th key={col}>{col}</th> : null))}
         </tr>
         {rows.map((row) => {
           return (
-            <tr>
+            <tr key={row.location}>
               {Object.keys(row).map((key) => {
-                return key !== "site" && key !== "location" ? <td>{row[key]}</td> : null;
+                return key !== "site" && key !== "location" ? <td key={key}>{row[key]}</td> : null;
               })}
             </tr>
           );

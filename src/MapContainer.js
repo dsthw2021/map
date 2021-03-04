@@ -6,11 +6,21 @@ import InfoTable from "./InfoTable";
 import DataTable from "./DataTable";
 
 export function titleCase(str) {
-  str = str.toLowerCase().split(" ");
-  for (var i = 0; i < str.length; i++) {
-    str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
+  const words = str.toLowerCase().split(" ");
+  for (let i = 0; i < words.length; i++) {
+    words[i] = titleCaseWithSlash(words[i]);
   }
-  return str.join(" ");
+
+  return words.join(" ");
+}
+
+function titleCaseWithSlash(str) {
+  const words = str.toLowerCase().split("/");
+  for (let i = 0; i < words.length; i++) {
+    words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+  }
+
+  return words.join("/");
 }
 
 function MapContainer(props) {
@@ -100,10 +110,23 @@ function MapContainer(props) {
   return (
     <Map google={google} zoom={14} onClick={onMapClicked}>
       {Object.keys(polygons).map((key) => {
+        let color;
+
+        if (descriptions[key].team === "Market") {
+          color = "orange";
+        } else if (descriptions[key].team === "Mission") {
+          color = "lightgreen";
+        }
+
         return (
           <Polygon
             key={key}
             paths={polygons[key]}
+            strokeColor={color}
+            strokeOpacity={0.35}
+            strokeWeight={2}
+            fillColor={color}
+            fillOpacity={0.35}
             onClick={(polygon) => {
               setActiveLocation(key);
               onPolygonClick(polygon);
