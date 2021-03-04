@@ -1,9 +1,10 @@
 // import react from "react";
 import { useState, useEffect } from "react";
-import { Map, InfoWindow, GoogleApiWrapper, Polygon } from "google-maps-react";
+import { Map, InfoWindow, GoogleApiWrapper, Polygon, Circle } from "google-maps-react";
 import Tabletop from "tabletop";
 import InfoTable from "./InfoTable";
 import DataTable from "./DataTable";
+import UserInputs from "./UserInputs";
 
 export function titleCase(str) {
   const words = str.toLowerCase().split(" ");
@@ -32,6 +33,11 @@ function MapContainer(props) {
   const [showInfoWindow, setShowInfoWindow] = useState(true);
   const [activeLocation, setActiveLocation] = useState("");
   const [infoWindowPosition, setInfoWindowPosition] = useState(null);
+  const [date, setDate] = useState(null);
+  const [metric, setMetric] = useState(null);
+  const [showPolygon, setShowPolygon] = useState(true);
+  const [showCircle, setShowCircle] = useState(false);
+  const [circleRadii, setCircleRadii] = useState({});
 
   function processData(spreadsheetData) {
     const dirtData = {};
@@ -103,47 +109,124 @@ function MapContainer(props) {
   }
 
   function getPolygonPosition(paths) {
-    // TODO: calculate the "center" of the polygon instead of returning a corner of it
-    return paths[0];
+    let bounds = new google.maps.LatLngBounds();
+    const latLngPaths = paths.map((path) => new google.maps.LatLng(path.lat, path.lng));
+
+    for (let i = 0; i < latLngPaths.length; i++) {
+      bounds.extend(latLngPaths[i]);
+    }
+
+    return bounds.getCenter();
+  }
+
+  function calculateCircleRadii(circleDate, circleMetric) {
+    if (!circleDate || !circleMetric) return {};
+
+    const metrics = {};
+    Object.keys(data).forEach((location) => {
+      metrics[location] = data[location].find((row) => {
+        return row.date === circleDate;
+      })[circleMetric];
+    });
+
+    const totalRadii = 1500;
+    const total = Object.values(metrics).reduce((a, c) => a + c);
+
+    const newRadii = {};
+    for (const location in metrics) {
+      newRadii[location] = {
+        value: metrics[location],
+        radii: total ? Math.floor(parseFloat(metrics[location] / total) * totalRadii) : 0,
+      };
+    }
+
+    setCircleRadii(newRadii);
   }
 
   return (
-    <Map google={google} zoom={14} onClick={onMapClicked}>
-      {Object.keys(polygons).map((key) => {
-        let color;
+    <div>
+      <UserInputs
+        showPolygon={showPolygon}
+        showCircle={showCircle}
+        date={date}
+        metric={metric}
+        onChangeShowMap={() => setShowPolygon(!showPolygon)}
+        onChangeShowCircle={() => setShowCircle(!showCircle)}
+        onChangeDate={(e) => {
+          setDate(e.target.value);
+          calculateCircleRadii(e.target.value, metric);
+        }}
+        onChangeMetric={(e) => {
+          setMetric(e.target.value);
+          calculateCircleRadii(date, e.target.value);
+        }}
+        dateOptions={data[Object.keys(data)[0]] ? data[Object.keys(data)[0]] : []}
+        metricOptions={Object.keys(data).length ? Object.keys(data[Object.keys(data)[0]][0]) : []}
+      />
 
-        if (descriptions[key].team === "Market") {
-          color = "orange";
-        } else if (descriptions[key].team === "Mission") {
-          color = "lightgreen";
-        }
+      <Map google={google} zoom={14} onClick={onMapClicked}>
+        {showPolygon
+          ? Object.keys(polygons).map((key) => {
+              let color;
 
-        return (
-          <Polygon
-            key={key}
-            paths={polygons[key]}
-            strokeColor={color}
-            strokeOpacity={0.35}
-            strokeWeight={2}
-            fillColor={color}
-            fillOpacity={0.35}
-            onClick={(polygon) => {
-              setActiveLocation(key);
-              onPolygonClick(polygon);
-            }}
-          />
-        );
-      })}
-      {activeLocation ? (
-        <InfoWindow position={infoWindowPosition} visible={showInfoWindow} onClose={onInfoWindowClose}>
-          <div className="info-window">
-            <h1>{titleCase(activeLocation)}</h1>
-            <InfoTable name={activeLocation} info={descriptions[activeLocation]} />
-            <DataTable title="Past 90 Days" rows={data[activeLocation]} />
-          </div>
-        </InfoWindow>
-      ) : null}
-    </Map>
+              if (descriptions[key].team === "Market") {
+                color = "orange";
+              } else if (descriptions[key].team === "Mission") {
+                color = "lightgreen";
+              }
+
+              return (
+                <Polygon
+                  key={key}
+                  paths={polygons[key]}
+                  strokeColor={color}
+                  strokeOpacity={0.35}
+                  strokeWeight={2}
+                  fillColor={color}
+                  fillOpacity={0.35}
+                  onClick={(polygon) => {
+                    setActiveLocation(key);
+                    onPolygonClick(polygon);
+                  }}
+                />
+              );
+            })
+          : null}
+        {showCircle
+          ? Object.keys(polygons).map((key) => {
+              let color;
+
+              if (descriptions[key].team === "Market") {
+                color = "red";
+              } else if (descriptions[key].team === "Mission") {
+                color = "blue";
+              }
+
+              return (
+                <Circle
+                  key={key}
+                  radius={circleRadii[key] ? circleRadii[key].radii : 0}
+                  center={getPolygonPosition(polygons[key])}
+                  strokeColor={color}
+                  strokeOpacity={0}
+                  strokeWeight={5}
+                  fillColor={color}
+                  fillOpacity={0.6}
+                />
+              );
+            })
+          : null}
+        {activeLocation ? (
+          <InfoWindow position={infoWindowPosition} visible={showInfoWindow} onClose={onInfoWindowClose}>
+            <div className="info-window">
+              <h1>{titleCase(activeLocation)}</h1>
+              <InfoTable name={activeLocation} info={descriptions[activeLocation]} />
+              <DataTable title="Past 90 Days" rows={data[activeLocation]} />
+            </div>
+          </InfoWindow>
+        ) : null}
+      </Map>
+    </div>
   );
 }
 

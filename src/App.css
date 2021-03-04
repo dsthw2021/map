@@ -58,6 +58,25 @@ td.bold {
   align-items: flex-start;
 }
 
+.user-inputs {
+  padding: 15px;
+  position: absolute;
+  z-index: 10;
+  background-color: #fff;
+  border-radius: 3px;
+  margin: 15px;
+  display: block;
+}
+
+.user-input-section {
+  display: flex;
+  margin: 5px;
+}
+
+.user-input-label {
+  width: 150px;
+}
+
 .data-table,
 .data-table td {
   text-align: center;
