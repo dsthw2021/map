@@ -14,7 +14,20 @@ export default function DataTable(props) {
           return (
             <tr key={row.location}>
               {Object.keys(row).map((key) => {
-                return key !== "site" && key !== "location" ? <td key={key}>{row[key]}</td> : null;
+                if (key !== "site" && key !== "location") {
+                  let className;
+                  if (isNaN(new Date(row.date).getTime())) {
+                    className = "bold";
+                  }
+
+                  return (
+                    <td className={className} key={key}>
+                      {row[key]}
+                    </td>
+                  );
+                }
+
+                return null;
               })}
             </tr>
           );

@@ -52,6 +52,12 @@ function MapContainer(props) {
 
         const filteredElements = spreadsheetData[tabName].elements.filter((el) => {
           const date = new Date(el.date).getTime();
+
+          // let through any that are not a date (could be "Total", etc.)
+          if (isNaN(date)) {
+            return true;
+          }
+
           const today = new Date().getTime();
           // filter for dates within past 90 days, units are in ms
           return today - date < 90 * 24 * 60 * 60 * 1000;
