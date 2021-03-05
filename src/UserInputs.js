@@ -13,7 +13,7 @@ export default function UserInputs(props) {
     metricOptions,
   } = props;
 
-  const [hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(true);
 
   if (hidden) {
     return (

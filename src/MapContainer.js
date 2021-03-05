@@ -38,6 +38,7 @@ function MapContainer(props) {
   const [showPolygon, setShowPolygon] = useState(true);
   const [showCircle, setShowCircle] = useState(false);
   const [circleRadii, setCircleRadii] = useState({});
+  const [showCircleHover, setShowCircleHover] = useState(false);
 
   function processData(spreadsheetData) {
     const dirtData = {};
@@ -103,9 +104,10 @@ function MapContainer(props) {
     setActiveLocation("");
   }
 
-  function onPolygonClick(polygon) {
-    setInfoWindowPosition(getPolygonPosition(polygon.paths));
+  function onPolygonClick(paths) {
+    setInfoWindowPosition(getPolygonPosition(paths));
     setShowInfoWindow(true);
+    setShowCircleHover(false);
   }
 
   function getPolygonPosition(paths) {
@@ -186,12 +188,32 @@ function MapContainer(props) {
                   fillOpacity={0.35}
                   onClick={(polygon) => {
                     setActiveLocation(key);
-                    onPolygonClick(polygon);
+                    onPolygonClick(polygon.paths);
+                  }}
+                  onMouseover={() => {
+                    if (!showInfoWindow) {
+                      setActiveLocation(key);
+                      setShowCircleHover(true);
+                    }
+                  }}
+                  onMouseout={() => {
+                    if (!showInfoWindow) {
+                      setShowCircleHover(false);
+                      setActiveLocation("");
+                    }
                   }}
                 />
               );
             })
           : null}
+        {!!circleRadii[activeLocation] ? (
+          <InfoWindow
+            position={getPolygonPosition(polygons[activeLocation])}
+            visible={showCircle && showCircleHover && !!activeLocation}
+          >
+            <span>{circleRadii[activeLocation].value}</span>
+          </InfoWindow>
+        ) : null}
         {showCircle
           ? Object.keys(polygons).map((key) => {
               let color;
@@ -201,17 +223,33 @@ function MapContainer(props) {
               } else if (descriptions[key].team === "Mission") {
                 color = "blue";
               }
-
+              const centerCoord = getPolygonPosition(polygons[key]);
               return (
                 <Circle
                   key={key}
                   radius={circleRadii[key] ? circleRadii[key].radii : 0}
-                  center={getPolygonPosition(polygons[key])}
+                  center={centerCoord}
                   strokeColor={color}
                   strokeOpacity={0}
                   strokeWeight={5}
                   fillColor={color}
                   fillOpacity={0.6}
+                  onClick={() => {
+                    setActiveLocation(key);
+                    onPolygonClick(polygons[key]);
+                  }}
+                  onMouseover={() => {
+                    if (!showInfoWindow) {
+                      setActiveLocation(key);
+                      setShowCircleHover(true);
+                    }
+                  }}
+                  onMouseout={() => {
+                    if (!showInfoWindow) {
+                      setShowCircleHover(false);
+                      setActiveLocation("");
+                    }
+                  }}
                 />
               );
             })
